@@ -126,6 +126,14 @@ extension String {
         }
         return self.subString(length: 1)
     }
+    /// 1文字ずつ分割して配列で返します
+    var charactors: [String] {
+        var returns: [String] = []
+        for i in self {
+            returns.append(String(i))
+        }
+        return returns
+    }
     /// 文字列の最初の行を示します
     var firstLine: String? {
         return self.splitedBR.first

@@ -13,32 +13,37 @@ protocol StoryBoardInstantiatable {}
 extension UIViewController: StoryBoardInstantiatable {}
 
 extension StoryBoardInstantiatable where Self: UIViewController {
-    /**
-     命名に注意してください
-     ```
-     Storyboard:Main.storyboard
-     Identifier:Main
-     Class:MainViewController.swift
-     ```
-     */
+    
     static func instantiate() -> Self {
-        let fileName = self.className.replace(of: "ViewController", with: "")
-        let storyboard = UIStoryboard(name: fileName, bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: fileName) as! Self
+        let storyboard = UIStoryboard(name: self.className, bundle: nil)
+        return storyboard.instantiateViewController(withIdentifier: self.className) as! Self
+    }
+
+    static func instantiateNavigationController() -> UINavigationController {
+        let storyboard = UIStoryboard(name: self.className, bundle: nil)
+        return storyboard.instantiateInitialViewController() as! UINavigationController
     }
     
     /**
-     命名に注意してください
+     ViewControllerを生成してイニシャライザに引数を渡す
+     
+     遷移先のViewControllerは以下のように実装する
      ```
-     Storyboard:Main.storyboard
-     Identifier:Main
-     Class:MainViewController.swift
+     let id: Int
+     
+     init(coder: NSCoder, id: Int) {
+        self.id = id
+        super.init(coder: coder)!
+     }
+     
+     required init?(coder: NSCoder) {
+        fatalError()
+     }
      ```
      */
-    static func instantiateNavigationController() -> UINavigationController {
-        let fileName = self.className.replace(of: "ViewController", with: "")
-        let storyboard = UIStoryboard(name: fileName, bundle: nil)
-        return storyboard.instantiateInitialViewController() as! UINavigationController
+    static func instantiate(creator: ((NSCoder) -> UIViewController)?) -> Self {
+        let storyboard = UIStoryboard(name: self.className, bundle: nil)
+        return storyboard.instantiateInitialViewController(creator: creator) as! Self
     }
 }
 

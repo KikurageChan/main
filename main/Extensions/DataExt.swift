@@ -20,7 +20,7 @@ extension Data {
         - encoding: エンコードタイプ
      - returns: JSON形式の文字列
      */
-    func toJSONText(encoding: String.Encoding = .utf8) -> String? {
+    func toJSON(encoding: String.Encoding = .utf8) -> String? {
         return String(data: self, encoding: encoding)
     }
 }

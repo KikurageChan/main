@@ -296,7 +296,7 @@ extension UIView {
      - parameters:
         - id: 所得するViewのaccessibilityIdentifier
      */
-    func viewWithId(_ id: String) -> UIView? {
+    func viewWithID(_ id: String) -> UIView? {
         return subviews.first(where: { $0.accessibilityIdentifier == id })
     }
 }

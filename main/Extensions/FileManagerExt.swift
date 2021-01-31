@@ -113,6 +113,18 @@ extension FileManager {
     }
     
     /**
+     AppGroupsで共有されたファイルのURLを返します
+     - parameters:
+        - appGroupsID: AppGroupsの識別子
+        - fileName: ファイルの名前
+     - returns: ファイルURL
+     */
+    static func fileURL(appGroupsID: String, _ fileName: String) -> URL? {
+        let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupsID)
+        return appGroupURL?.appendingPathComponent(fileName)
+    }
+    
+    /**
      ファイルを保存します
      - parameters:
         - data: 保存するデータ
@@ -138,6 +150,19 @@ extension FileManager {
             FileManager.remove(fileURL: fileURL)
         }
         try? data.write(to: fileURL)
+    }
+    
+    /**
+     文字列データを保存します
+     - parameters:
+        - data: 保存するデータ
+        - fileURL: ファイルのURL
+     */
+    static func save(string: String, fileURL: URL) {
+        if FileManager.fileExists(atURL: fileURL) {
+            FileManager.remove(fileURL: fileURL)
+        }
+        try? string.write(to: fileURL, atomically: true, encoding: .utf8)
     }
     
     /**
@@ -188,7 +213,7 @@ extension FileManager {
         - atURL: ファイルのURL
      */
     static func fileExists(atURL: URL) -> Bool {
-        let removedFilePath = atURL.absoluteString.replace(of: "file://", with: "")
+        let removedFilePath = atURL.absoluteString.replacingOccurrences(of: "file://", with: "")
         return FileManager.default.fileExists(atPath: removedFilePath)
     }
     

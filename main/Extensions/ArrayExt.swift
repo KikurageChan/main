@@ -38,6 +38,15 @@ extension Array {
 extension Array where Element: Equatable {
     typealias E = Element
     
+    func contains(array: [E]) -> Bool {
+        for object in array {
+            if self.contains(object) {
+                return true
+            }
+        }
+        return false
+    }
+    
     mutating func appendFirst(_ newElement: E) {
         self.insert(newElement, at: 0)
     }

@@ -126,4 +126,23 @@ extension UICollectionView {
             self.deselectItem(at: indexPath, animated: animated)
         }
     }
+    
+    func collectionHeaderView(_ identifert: String) -> UIView? {
+        return self.viewWithID(identifert)
+    }
+
+    func setCollectionHeaderView(_ view: UIView, _ identifert: String? = nil) {
+        let height = view.frame.size.height
+        view.frame = CGRect(x: 0, y: self.contentInset.top - height, width: self.frame.width, height: height)
+        view.accessibilityIdentifier = identifert ?? String(describing: type(of: view))
+        self.addSubview(view)
+        self.contentInset = UIEdgeInsets(top: height, left: self.contentInset.left, bottom: self.contentInset.bottom, right: self.contentInset.right)
+    }
+    
+    func removeCollectionHeaderView(_ identifert: String) {
+        guard let collectionHeaderView = collectionHeaderView(identifert) else { return }
+        let headerHeight = collectionHeaderView.frame.height
+        collectionHeaderView.removeFromSuperview()
+        self.contentInset = UIEdgeInsets(top: self.contentInset.top - headerHeight, left: self.contentInset.left, bottom: self.contentInset.bottom, right: self.contentInset.right)
+    }
 }
