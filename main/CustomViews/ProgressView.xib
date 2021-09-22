@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" restorationIdentifier="ProgressView" id="oF1-XZ-c51" customClass="ProgressView" customModule="main" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="6lO-dY-z7w">
+                    <rect key="frame" x="89" y="259" width="142" height="50"/>
+                    <subviews>
+                        <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="yLC-Xf-bVr">
+                            <rect key="frame" x="106" y="15" width="20" height="20"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="20" id="Uwu-Cf-3ME"/>
+                                <constraint firstAttribute="width" constant="20" id="rGO-BV-4GM"/>
+                            </constraints>
+                            <color key="color" systemColor="systemGreenColor"/>
+                        </activityIndicatorView>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="読み込み中" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="bnV-0T-Eu2">
+                            <rect key="frame" x="16" y="15" width="82" height="20"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                            <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                    </subviews>
+                    <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+                    <constraints>
+                        <constraint firstItem="yLC-Xf-bVr" firstAttribute="centerY" secondItem="bnV-0T-Eu2" secondAttribute="centerY" id="0U8-E8-OkK"/>
+                        <constraint firstAttribute="width" constant="142" id="3Rd-W6-93c"/>
+                        <constraint firstItem="bnV-0T-Eu2" firstAttribute="centerY" secondItem="6lO-dY-z7w" secondAttribute="centerY" id="bqB-F8-aai"/>
+                        <constraint firstItem="bnV-0T-Eu2" firstAttribute="leading" secondItem="6lO-dY-z7w" secondAttribute="leading" constant="16" id="sXB-Rc-PKr"/>
+                        <constraint firstAttribute="height" constant="50" id="tKg-w0-K9l"/>
+                        <constraint firstAttribute="trailing" secondItem="yLC-Xf-bVr" secondAttribute="trailing" constant="16" id="tYm-Iy-v9l"/>
+                        <constraint firstItem="yLC-Xf-bVr" firstAttribute="leading" secondItem="bnV-0T-Eu2" secondAttribute="trailing" constant="8" id="ufb-Mu-Aip"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                            <integer key="value" value="15"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+            </subviews>
+            <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.34999999999999998" colorSpace="custom" customColorSpace="calibratedRGB"/>
+            <constraints>
+                <constraint firstItem="6lO-dY-z7w" firstAttribute="centerX" secondItem="oF1-XZ-c51" secondAttribute="centerX" id="2Nc-Mn-EPy"/>
+                <constraint firstItem="6lO-dY-z7w" firstAttribute="centerY" secondItem="oF1-XZ-c51" secondAttribute="centerY" id="Qmc-eT-kq6"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <connections>
+                <outlet property="activityIndicator" destination="yLC-Xf-bVr" id="yQN-7n-Xt3"/>
+                <outlet property="alertLabel" destination="bnV-0T-Eu2" id="th5-Ol-7IA"/>
+            </connections>
+            <point key="canvasLocation" x="440" y="31"/>
+        </view>
+    </objects>
+    <resources>
+        <systemColor name="systemGreenColor">
+            <color red="0.20392156862745098" green="0.7803921568627451" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

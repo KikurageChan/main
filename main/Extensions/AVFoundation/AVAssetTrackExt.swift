@@ -12,6 +12,14 @@ import UIKit
 
 extension AVAssetTrack {
     
+    var is4K: Bool {
+        return naturalSize.width > 1920 || naturalSize.height > 1920
+    }
+    
+    var HDSize: CGSize {
+        return isVideoPortrait ? CGSize(width: 1080, height: 1920) : CGSize(width: 1920, height: 1080)
+    }
+    
     var correctedSize: CGSize {
         if preferredTransform.isVideoPortrait != isVideoPortrait {
             // 録画の時
@@ -29,7 +37,6 @@ extension AVAssetTrack {
     }
     
     var isVideoPortrait: Bool {
-        // これが正しい向き
         let transformedVideoSize = self.naturalSize.applying(self.preferredTransform)
         return abs(transformedVideoSize.width) < abs(transformedVideoSize.height)
     }

@@ -12,6 +12,7 @@ import UIKit
 import Vision
 
 extension AVURLAsset {
+    
     func correct(outputURL: URL, completion: (() -> ())?) {
         let composition = AVMutableComposition()
         let compositionVideoTrack = composition.addMutableTrack(withMediaType: AVMediaType.video, preferredTrackID: kCMPersistentTrackID_Invalid)!

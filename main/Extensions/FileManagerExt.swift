@@ -10,7 +10,7 @@ import UIKit
 import Foundation
 
 extension FileManager {
-    
+    static let baseURL = FileManager.fileURL("base.MOV")
     static let resultURL = FileManager.fileURL("result.MOV")
     
     enum DirectoryType: String {

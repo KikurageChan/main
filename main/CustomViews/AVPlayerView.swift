@@ -12,7 +12,7 @@ import AVFoundation
 /**
  ```
  let item = AVPlayerItem(fileName: "File")
- avPlayerView.player = AVPlayer(item)
+ avPlayerView.player = AVPlayer(playerItem: item)
  avPlayerView.player?.play()
  ```
  */
