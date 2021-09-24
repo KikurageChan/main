@@ -8,9 +8,79 @@
 import UIKit
 import PhotosUI
 
+extension String {
+    func size(ofFont font: UIFont?) -> CGSize? {
+        guard let font = font else { return nil }
+        return (self as NSString).size(withAttributes: [NSAttributedString.Key.font : font])
+    }
+    /// 改行が含まれているか
+    var isContainsNewlines: Bool {
+        return self.rangeOfCharacter(from: CharacterSet.newlines) != nil
+    }
+}
+
+class VerticalCenteringCATextLayer : CATextLayer {
+    override func draw(in context: CGContext) {
+        let height = self.bounds.size.height
+        let fontSize = self.fontSize
+        let yDiff = (height-fontSize)/2 - fontSize/10
+        
+        context.saveGState()
+        context.translateBy(x: 0, y: yDiff)
+        super.draw(in: context)
+        context.restoreGState()
+    }
+}
+
+extension CATextLayer {
+    var textString: String? {
+        return self.string as? String
+    }
+    
+    var attributedString: NSAttributedString? {
+        return self.string as? NSAttributedString
+    }
+    
+    var uiFont: UIFont? {
+        return font as? UIFont
+    }
+    
+    var textSize: CGSize? {
+        guard let textString = textString else { return nil }
+        guard let uiFont = font as? UIFont else { return nil }
+        return textString.size(ofFont: UIFont(name: uiFont.fontName, size: fontSize))
+    }
+    /// 適用されている現在フォントで自身のサイズを変更します
+    func sizeToFitAtFont() {
+        guard let textSize = textSize else { return }
+        self.frame.size = textSize
+    }
+    /// 適用されている現在の装飾で自身のサイズを変更します
+    func sizeToFitAtAttribute() {
+        guard let attributedString = attributedString else { return }
+        guard let uiFont = attributedString.attributesAllLength[.font] as? UIFont else { return }
+        guard let uiFontSize = attributedString.string.size(ofFont: UIFont(name: uiFont.fontName, size: fontSize)) else { return }
+        let rect = attributedString.boundingRect(with: uiFontSize, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        self.frame.size = rect.size
+    }
+    /// 引数のSizeに合うまでフォントを自動で縮小します
+    func sizeThatFits(_ size: CGSize, horizontalInset: CGFloat = 2) {
+        while true {
+            guard let textSize = textSize else { break }
+            if size.width >= textSize.width + horizontalInset {
+                sizeToFitAtFont()
+                break
+            }
+            fontSize = fontSize - 1
+        }
+    }
+}
+
 class MainViewController: UIViewController, UINavigationControllerDelegate {
     
-    @IBOutlet weak var avPlayerView: AVPlayerView!
+    @IBOutlet weak var layerView: UIView!
+    var rankingPanelView: RankingPanelView!
+    var avPlayerView: AVPlayerView!
     var progressView: ProgressView!
     
     fileprivate var phPickerController: PHPickerViewController?
@@ -20,6 +90,11 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        rankingPanelView = RankingPanelView.instantiate()
+        self.view.addSubview(rankingPanelView)
+        rankingPanelView.centering()
+        
         // ProgressViewの設定
         self.progressView = ProgressView.instantiate()
         self.progressView.frame = CGRect(origin: CGPoint.zero, size: UIScreen.main.bounds.size)
@@ -37,23 +112,52 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
     
     // 動画を選択ボタンが押された時の処理
     @IBAction func selectButtonAction(_ sender: UIBarButtonItem) {
-        guard let pickerController = phPickerController else { return }
-        self.present(pickerController, animated: true, completion: nil)
+//        guard let pickerController = phPickerController else { return }
+//        self.present(pickerController, animated: true, completion: nil)
+        let image = rankingPanelView.screenShot()
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFit
+
+        self.view.addSubview(imageView)
+        imageView.fillSuperview()
+        
+        let panelEditVC = PanelEditViewController.instantiate()
+        self.navigationController?.pushViewController(panelEditVC, animated: true)
     }
     
     @IBAction func checkButtonAction(_ sender: UIBarButtonItem) {
         
         let image = UIImage(named: "BlackRect")!
         
-        UIImage.toMovie(images: [image, image], saveURL: FileManager.baseURL, sec: 5) {
-            
-            make {
+        var cgImages: [CGImage] = []
+        // サンプルで10枚追加
+        for _ in 0 ..< 1 {
+            let sam = rankingPanelView.screenShot()!.cgImage!
+            cgImages.append(sam)
+        }
+        
+        avPlayerView = AVPlayerView()
+        avPlayerView.backgroundColor = UIColor.darkGray
+        avPlayerView.bounds.size = CGSize(width: UIScreen.main.fixedCoordinateSpace.bounds.size.width,
+                                          height: UIScreen.main.fixedCoordinateSpace.bounds.size.height * 0.5)
+        self.view.addSubview(avPlayerView)
+        avPlayerView.centering(to: .top)
+        
+        // 画像1枚あたり3秒
+        let openingSecondLength = 3
+        let endingSecondLength = 3
+        let totalMovieSecondLength = cgImages.count * 3 + openingSecondLength + endingSecondLength
+        
+        UIImage.toMovie(images: [image, image], saveURL: FileManager.baseURL, sec: totalMovieSecondLength / 2) {
+            make(openingText: "民度が低いコミュニティまとめ", images: cgImages) {
                 DispatchQueue.main.async {
                     let resultItem = AVPlayerItem(url: FileManager.resultURL)
+                    print("result.duration=> \(resultItem.asset.duration.seconds)")
                     self.avPlayerView.player = AVPlayer(playerItem: resultItem)
                     self.avPlayerView.player?.play()
                 }
             }
+            
         }
     }
 }
@@ -75,14 +179,19 @@ extension MainViewController: PHPickerViewControllerDelegate {
     }
 }
 
-func make(completion: (() -> ())?) {
+func make(openingText: String = "", images: [CGImage], completion: (() -> ())?) {
+    
+    // フェードアウトも合わせた合計のオープニング時間
+    let openingTime: CMTime = CMTime(sec: 3.5)
+    let isNeedOpening = openingText.count != 0
+    
     let composition = AVMutableComposition()
     let compositionVideoTrack: AVMutableCompositionTrack = composition.addMutableTrack(withMediaType: AVMediaType.video, preferredTrackID: kCMPersistentTrackID_Invalid)!
     
-    let baseAsset = AVURLAsset(url: FileManager.baseURL, options: nil)
-    let baseVideoTrack = baseAsset.tracks(withMediaType: AVMediaType.video)[0]
+    let baseVideoAsset = AVURLAsset(url: FileManager.baseURL, options: nil)
+    let baseVideoTrack = baseVideoAsset.tracks(withMediaType: AVMediaType.video)[0]
     
-    try! compositionVideoTrack.insertTimeRange(CMTimeRange(start: CMTime.zero, duration: baseAsset.duration),
+    try! compositionVideoTrack.insertTimeRange(CMTimeRange(start: CMTime.zero, duration: baseVideoAsset.duration),
                                                of: baseVideoTrack,
                                                at: CMTime.zero)
     
@@ -92,7 +201,7 @@ func make(completion: (() -> ())?) {
     let bgmTrack = bgmAsset.tracks(withMediaType: AVMediaType.audio)[0]
     let soundCompositionTrack = composition.addMutableTrack(withMediaType: AVMediaType.audio, preferredTrackID: kCMPersistentTrackID_Invalid)!
 
-    try! soundCompositionTrack.insertTimeRange(CMTimeRange(start: CMTime.zero, duration: baseAsset.duration),
+    try! soundCompositionTrack.insertTimeRange(CMTimeRange(start: CMTime.zero, duration: baseVideoAsset.duration),
                                                of: bgmTrack,
                                                at: CMTime.zero)
     // BGMのボリュームを設定
@@ -108,35 +217,68 @@ func make(completion: (() -> ())?) {
     
     // トラックを操作する指導オブジェクト
     let instruction = AVMutableVideoCompositionInstruction()
-    instruction.timeRange = CMTimeRange(start: CMTime.zero, duration: baseAsset.duration)
+    instruction.timeRange = CMTimeRange(start: CMTime.zero, duration: baseVideoAsset.duration)
     instruction.layerInstructions = [layerInstruction]
+    
+    CATransaction.begin()
+    // オープニングの設定
+    let openingLayer = VerticalCenteringCATextLayer()
+    openingLayer.backgroundColor = UIColor.black.cgColor
+    openingLayer.foregroundColor = UIColor.white.cgColor
+    openingLayer.frame.size = baseVideoTrack.naturalSize
+    openingLayer.string = openingText
+    openingLayer.font = UIFont.systemFont(ofSize: 60, weight: .bold)
+    openingLayer.fontSize = 60
+    openingLayer.alignmentMode = .center
+    openingLayer.contentsScale = UIScreen.main.scale
+    // オープニングアニメーションの設定
+    let openingAnim = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
+    openingAnim.fromValue = 1.0
+    openingAnim.toValue = 0
+    openingAnim.duration = 1.5
+    openingAnim.beginTime = max(openingTime.seconds - openingAnim.duration, AVCoreAnimationBeginTimeAtZero)
+    openingAnim.isRemovedOnCompletion = false
+    openingAnim.fillMode = .forwards
+    
+    CATransaction.setCompletionBlock{
+        print("again...")
+    }
+    openingLayer.add(openingAnim, forKey: nil)
+    CATransaction.commit()
     
     // ベースレイヤーの作成
     let baseLayer = CALayer()
-    baseLayer.backgroundColor = UIColor.black.cgColor
+    baseLayer.backgroundColor = UIColor(hex: 0x141414).cgColor
     baseLayer.frame = CGRect(x: baseVideoTrack.naturalSize.width,
                              y: baseVideoTrack.naturalSize.height * 0.5,
-                             width: 320,
+                             width: 320 * CGFloat(images.count),
                              height: baseVideoTrack.naturalSize.height)
     
+    print(baseLayer.frame.size)
     
-    // ロゴの作成
-    let logoLayer = CALayer()
-    logoLayer.contents = UIImage(named: "Rectangle")!.cgImage
-    logoLayer.frame = CGRect(x: baseVideoTrack.naturalSize.width,
-                             y: baseVideoTrack.naturalSize.height * 0.5, width: 200, height: 200)
+    for i in 0 ..< images.count {
+        // 画像をのせるレイヤーの作成
+        let thumbnailLayer = CALayer()
+        thumbnailLayer.contents = images[i]
+        thumbnailLayer.contentsGravity = .resizeAspect
+        let x = 320 * CGFloat(i)
+        print(x)
+        thumbnailLayer.frame = CGRect(origin: CGPoint(x: x, y: 0),
+                                      size: CGSize(width: 320, height: 720))
+        baseLayer.addSublayer(thumbnailLayer)
+    }
     
     // アニメーションの設定
     let anim = CABasicAnimation(keyPath: #keyPath(CALayer.position))
     anim.fromValue = CGPoint(x: baseVideoTrack.naturalSize.width,
                              y: baseVideoTrack.naturalSize.height * 0.5)
-    anim.toValue = CGPoint(x: 10,
+    anim.toValue = CGPoint(x: baseLayer.frame.width * -1,
                            y: baseVideoTrack.naturalSize.height * 0.5)
-    anim.duration = baseAsset.duration.seconds
-    anim.beginTime = 0.1
+    anim.duration = baseVideoAsset.duration.seconds
+    anim.beginTime = max(openingTime.seconds, AVCoreAnimationBeginTimeAtZero)
     anim.isRemovedOnCompletion = false
     anim.fillMode = .forwards
-    logoLayer.add(anim, forKey: nil)
+    baseLayer.add(anim, forKey: nil)
     
     // 親レイヤーを作成
     let parentLayer = CALayer()
@@ -144,7 +286,11 @@ func make(completion: (() -> ())?) {
     parentLayer.frame = CGRect(x: 0, y: 0, width: baseVideoTrack.correctedSize.width, height: baseVideoTrack.correctedSize.height)
     videoLayer.frame = CGRect(x: 0, y: 0, width: baseVideoTrack.correctedSize.width, height: baseVideoTrack.correctedSize.height)
     parentLayer.addSublayer(videoLayer)
-    parentLayer.addSublayer(logoLayer)
+    parentLayer.addSublayer(baseLayer)
+    
+    if isNeedOpening {
+        parentLayer.addSublayer(openingLayer)
+    }
     
     // 全てのトラックを合わせた動画情報の設定
     let videoComposition = AVMutableVideoComposition()

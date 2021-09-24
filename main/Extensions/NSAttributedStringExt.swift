@@ -12,6 +12,10 @@ extension NSAttributedString {
     var mutableAttributedString: NSMutableAttributedString {
         return NSMutableAttributedString(attributedString: self)
     }
+    
+    var attributesAllLength: [NSAttributedString.Key : Any] {
+        return attributes(at: 0, longestEffectiveRange: nil, in: NSRange(location: 0, length: self.length))
+    }
     //前後のスペースを消去します
     func trimSpace() -> NSAttributedString {
         return self.attributedStringByTrimmingCharacterSet(CharacterSet.whitespaces)
