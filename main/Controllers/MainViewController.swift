@@ -95,6 +95,32 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
         self.view.addSubview(rankingPanelView)
         rankingPanelView.centering()
         
+//        let textBaseLayer = CALayer()
+//        textBaseLayer.backgroundColor = UIColor.purple.cgColor
+//        textBaseLayer.frame = CGRect(x: 0,
+//                                     y: 0,
+//                                     width: 200, height: 200)
+//
+//        print("textBaseLayer.ancher = \(textBaseLayer.anchorPoint)")
+//        print("textBaseLayer.frame = \(textBaseLayer.frame)")
+//        print("textBaseLayer.bounds = \(textBaseLayer.bounds)")
+//
+//        self.layerView.layer.addSublayer(textBaseLayer)
+//
+//        let subLayer = CALayer()
+//        subLayer.backgroundColor = UIColor.systemGreen.cgColor
+//        textBaseLayer.addSublayer(subLayer)
+//        subLayer.frame = CGRect(x: 0, y: 0, width: 50, height: 50)
+//
+//        print("subLayer.ancher = \(subLayer.anchorPoint)")
+//        print("subLayer.frame = \(subLayer.frame)")
+//        print("subLayer.bounds = \(subLayer.bounds)")
+//
+//        let ancherLayer = CALayer()
+//        ancherLayer.backgroundColor = UIColor.systemPink.cgColor
+//        ancherLayer.frame.size = CGSize(width: 5, height: 5)
+//        subLayer.addSublayer(ancherLayer)
+//        ancherLayer.centering()
         // ProgressViewの設定
         self.progressView = ProgressView.instantiate()
         self.progressView.frame = CGRect(origin: CGPoint.zero, size: UIScreen.main.bounds.size)
@@ -114,13 +140,14 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
     @IBAction func selectButtonAction(_ sender: UIBarButtonItem) {
 //        guard let pickerController = phPickerController else { return }
 //        self.present(pickerController, animated: true, completion: nil)
+        
         let image = rankingPanelView.screenShot()
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
 
         self.view.addSubview(imageView)
         imageView.fillSuperview()
-        
+
         let panelEditVC = PanelEditViewController.instantiate()
         self.navigationController?.pushViewController(panelEditVC, animated: true)
     }
@@ -131,7 +158,7 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
         
         var cgImages: [CGImage] = []
         // サンプルで10枚追加
-        for _ in 0 ..< 1 {
+        for _ in 0 ..< 5 {
             let sam = rankingPanelView.screenShot()!.cgImage!
             cgImages.append(sam)
         }
@@ -182,8 +209,12 @@ extension MainViewController: PHPickerViewControllerDelegate {
 func make(openingText: String = "", images: [CGImage], completion: (() -> ())?) {
     
     // フェードアウトも合わせた合計のオープニング時間
-    let openingTime: CMTime = CMTime(sec: 3.5)
+    let openingTime: CMTime = CMTime(sec: 3.0)
+    let endingTime: CMTime = CMTime(sec: 3.0)
+//    let contentsTime: CMTime =
     let isNeedOpening = openingText.count != 0
+    
+    let rankingPanelSize = CGSize(width: 320, height: 720)
     
     let composition = AVMutableComposition()
     let compositionVideoTrack: AVMutableCompositionTrack = composition.addMutableTrack(withMediaType: AVMediaType.video, preferredTrackID: kCMPersistentTrackID_Invalid)!
@@ -220,7 +251,6 @@ func make(openingText: String = "", images: [CGImage], completion: (() -> ())?) 
     instruction.timeRange = CMTimeRange(start: CMTime.zero, duration: baseVideoAsset.duration)
     instruction.layerInstructions = [layerInstruction]
     
-    CATransaction.begin()
     // オープニングの設定
     let openingLayer = VerticalCenteringCATextLayer()
     openingLayer.backgroundColor = UIColor.black.cgColor
@@ -236,25 +266,22 @@ func make(openingText: String = "", images: [CGImage], completion: (() -> ())?) 
     openingAnim.fromValue = 1.0
     openingAnim.toValue = 0
     openingAnim.duration = 1.5
-    openingAnim.beginTime = max(openingTime.seconds - openingAnim.duration, AVCoreAnimationBeginTimeAtZero)
+    // 0のときはAVCoreAnimationBeginTimeAtZero
+    openingAnim.beginTime = openingTime.seconds - openingAnim.duration
     openingAnim.isRemovedOnCompletion = false
     openingAnim.fillMode = .forwards
-    
-    CATransaction.setCompletionBlock{
-        print("again...")
-    }
     openingLayer.add(openingAnim, forKey: nil)
-    CATransaction.commit()
     
     // ベースレイヤーの作成
     let baseLayer = CALayer()
-    baseLayer.backgroundColor = UIColor(hex: 0x141414).cgColor
+    baseLayer.backgroundColor = UIColor.systemPink.cgColor
+    // CAAnimationを行う際(0.5, 0.5)だと扱いにくいため
+    baseLayer.anchorPoint = CGPoint(x: 0, y: 0)
+
     baseLayer.frame = CGRect(x: baseVideoTrack.naturalSize.width,
-                             y: baseVideoTrack.naturalSize.height * 0.5,
-                             width: 320 * CGFloat(images.count),
+                             y: 0,
+                             width: rankingPanelSize.width * CGFloat(images.count),
                              height: baseVideoTrack.naturalSize.height)
-    
-    print(baseLayer.frame.size)
     
     for i in 0 ..< images.count {
         // 画像をのせるレイヤーの作成
@@ -262,20 +289,19 @@ func make(openingText: String = "", images: [CGImage], completion: (() -> ())?) 
         thumbnailLayer.contents = images[i]
         thumbnailLayer.contentsGravity = .resizeAspect
         let x = 320 * CGFloat(i)
-        print(x)
-        thumbnailLayer.frame = CGRect(origin: CGPoint(x: x, y: 0),
-                                      size: CGSize(width: 320, height: 720))
         baseLayer.addSublayer(thumbnailLayer)
+        thumbnailLayer.frame = CGRect(origin: CGPoint(x: x, y: 0),
+                                      size: rankingPanelSize)
     }
     
     // アニメーションの設定
     let anim = CABasicAnimation(keyPath: #keyPath(CALayer.position))
-    anim.fromValue = CGPoint(x: baseVideoTrack.naturalSize.width,
-                             y: baseVideoTrack.naturalSize.height * 0.5)
-    anim.toValue = CGPoint(x: baseLayer.frame.width * -1,
-                           y: baseVideoTrack.naturalSize.height * 0.5)
+    anim.fromValue = CGPoint(x: baseLayer.frame.origin.x,
+                             y: 0)
+    anim.toValue = CGPoint(x: 0 - baseLayer.frame.size.width,
+                           y: 0)
     anim.duration = baseVideoAsset.duration.seconds
-    anim.beginTime = max(openingTime.seconds, AVCoreAnimationBeginTimeAtZero)
+    anim.beginTime = openingTime.seconds
     anim.isRemovedOnCompletion = false
     anim.fillMode = .forwards
     baseLayer.add(anim, forKey: nil)
